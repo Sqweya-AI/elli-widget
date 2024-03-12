@@ -1,4 +1,4 @@
-import { styles, CLOSE_ICON, MESSAGE_ICON } from "./assets.js";
+import { styles, CLOSE_ICON, MESSAGE_ICON, SEND_ICON } from "./assets.js";
 
 class MessageWidget {
   constructor(position = "bottom-right") {
@@ -33,7 +33,7 @@ class MessageWidget {
     buttonContainer.classList.add("button__container");
 
     const widgetIconElement = document.createElement("span");
-    widgetIconElement.innerHTML = MESSAGE_ICON;
+    widgetIconElement.innerHTML = SEND_ICON;
     widgetIconElement.classList.add("widget__icon");
     this.widgetIcon = widgetIconElement;
 
