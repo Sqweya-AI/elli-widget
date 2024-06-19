@@ -1,4 +1,4 @@
-import { styles, CLOSE_ICON, MESSAGE_ICON, SEND_ICON } from "./assets.js";
+import { styles, CLOSE_ICON, MESSAGE_ICON, SEND_ICON, SEND_MESSAGE_ICON } from "./assets.js";
 
 class MessageWidget {
   constructor(position = "bottom-right") {
@@ -64,12 +64,11 @@ class MessageWidget {
       <div class="chat__messages" id="chatMessages"></div>
       <form id="chatForm">
         <div class="form__field">
-          <textarea
+          <input
             id="chatInput"
             name="message"
             placeholder="Type your message..."
-            rows="2"
-          ></textarea>
+          ></input>
         </div>
         <button type="submit">Send</button>
       </form>
@@ -77,8 +76,21 @@ class MessageWidget {
   
     const chatForm = this.widgetContainer.querySelector('#chatForm');
     chatForm.addEventListener('submit', this.handleSendMessage.bind(this));
+
+    const chatInput = this.widgetContainer.querySelector('#chatInput');
+    chatInput.addEventListener('keypress', this.handleKeyPress.bind(this));
+  
+    const sendMessageIcon = this.widgetContainer.querySelector('#sendMessageIcon');
+    sendMessageIcon.addEventListener('click', this.handleSendMessage.bind(this));
   
     this.loadMessages();
+  }
+
+  handleKeyPress(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.handleSendMessage(event);
+    }
   }
 
   async handleSendMessage(event) {
@@ -94,14 +106,26 @@ class MessageWidget {
   }
 
   async sendMessageToLLM(message) {
+    const apiKey = import.meta.env.local.VITE_OPENAI_KEY;
+  
+    if (!apiKey) {
+      console.error('OpenAI API key not found in environment variables');
+      return 'Sorry, there was an error processing your request.';
+    }
+  
     try {
-      const response = await fetch('https://sqweya-llm.openai.azure.com/', {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REACT_APP_AZURE_API_KEY}`
+          'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify({ prompt: message })
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [{ role: "user", content: message }],
+          temperature: 0.7,
+          max_tokens: 150
+        })
       });
   
       if (!response.ok) {
@@ -110,7 +134,7 @@ class MessageWidget {
       }
   
       const data = await response.json();
-      return data.message || 'Sorry, I could not understand your query.';
+      return data.choices[0].message.content || 'Sorry, I could not understand your query.';
     } catch (error) {
       console.error('Error sending message to LLM:', error);
       return 'Sorry, there was an error processing your request.';
